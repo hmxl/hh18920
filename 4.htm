@@ -1,0 +1,126 @@
+<meta charset="utf-8" />
+<style>
+	canvas {
+		border: 1px solid lightgray;
+	}
+	#target {
+		position: absolute;
+		display: none;
+		border: 1px solid black;
+		font-size: 15px;
+		padding: 5px;
+		background: white;
+	}
+</style>
+<script>
+	let ctx;
+	let WIDTH, HEIGHT;
+	let courses;
+	let sum;
+	let per;
+	let start,end;
+	let x,y,r;
+	let texts=[];
+	let TEXT_HEIGHT = 15;
+	window.onload = function() {
+		let canvas = document.querySelector("canvas");
+		// 给画布加鼠标移动事件
+		canvas.onmousemove = function(event) {
+			let targetIndex = getTargetIndex(event.offsetX, event.offsetY);
+			if (targetIndex == -1) {
+				// 没有指向任何有效的文字区域
+				document.querySelector("#target").style.display = "none";
+			} else {
+				with(document.querySelector("#target")) {
+					style.top = event.pageY + 5;
+					style.left = event.pageX + 5;
+					textContent = courses[targetIndex].value;
+					style.display = "block";
+				}
+			}
+		}
+		
+		ctx = canvas.getContext("2d");
+		WIDTH = canvas.width;
+		HEIGHT = canvas.height;
+		x = WIDTH / 2;
+		y = HEIGHT / 2;
+		r = 200;
+		
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		courses = document.querySelectorAll("input[name='courses']");
+	/* 	console.log(courses); */
+		
+		start = 3 / 2 * Math.PI;
+		end;
+	}
+	function getTargetIndex(offsetX, offsetY) {
+		let targetIndex = -1;
+		texts.forEach(({x, y}, index) => {
+			let textWidth = ctx.measureText(courses[index].getAttribute("item")).width;
+			if (
+				offsetX >= (x - textWidth / 2) &&
+				offsetX <= (x + textWidth / 2) &&
+				offsetY >= (y - TEXT_HEIGHT / 2) &&
+				offsetY <= (y + TEXT_HEIGHT / 2)
+			) {
+				targetIndex = index;
+			}
+		});
+		return targetIndex;
+	}
+	function genPieChart() {
+		// 清空画布
+		ctx.clearRect(0, 0, WIDTH, HEIGHT);
+		texts=[];
+		sum = 0;
+		// 计算各门总
+		courses.forEach(({value}) => {
+			sum += (+value);
+		});
+		/* console.log(sum); */
+		
+		let styles=["pink","grey","lightblue","yellow","lightgreen","orange"];
+		// 计算各门占比
+		courses.forEach((item,index) => {
+			per = item.value / sum;
+			end = start + per * 2 * Math.PI;
+			/* console.log(item.value,item,index); */
+			
+			// 绘制弧线
+			ctx.beginPath();
+			ctx.moveTo(x, y);
+			ctx.arc(x, y, r, start, end);
+			ctx.fillStyle =styles[index];
+			ctx.fill();
+			ctx.closePath();
+			
+			// 绘制文字
+			let center = (start + end) / 2;
+			let centerX = x + r * Math.cos(center);
+			let centerY = y + r * Math.sin(center);
+			
+			let textX = (x + centerX) / 2;
+			let textY = (y + centerY) / 2;
+			
+			ctx.font = TEXT_HEIGHT +"px Times New Roman";
+			ctx.fillStyle = "white";
+			ctx.fillText(item.getAttribute("item"), textX, textY);
+			
+			texts.push({x:textX, y:textY});
+			
+			start = end;
+			/* console.log(end); */
+		});
+	}
+</script>
+Java: <input name="courses" item="Java" value="10" /><br />
+C++: <input name="courses" item="C++" value="40" /><br />
+Android: <input name="courses" item="Android" value="75" /><br />
+Web: <input name="courses" item="Web" value="50" /><br />
+PHP: <input name="courses" item="PHP" value="25" /><br />
+MySQL: <input name="courses" item="MySQL" value="20" /><br />
+<button onclick="genPieChart()">Line Chart</button><br />
+<canvas width="600" height="600"></canvas>
+<div id="target">90</div>
